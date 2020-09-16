@@ -1,14 +1,10 @@
-cmake_minimum_required(VERSION 2.6)
-if(TEST_CPP)
-    project("mbed TLS" C CXX)
-else()
-    project("mbed TLS" C)
-endif()
+cmake_minimum_required(VERSION 3.12)
+project(mbedTLS LANGUAGES C CXX VERSION 1)
 
 option(USE_PKCS11_HELPER_LIBRARY "Build mbed TLS with the pkcs11-helper library." OFF)
 option(ENABLE_ZLIB_SUPPORT "Build mbed TLS with zlib library." OFF)
 
-option(ENABLE_PROGRAMS "Build mbed TLS programs." ON)
+option(ENABLE_PROGRAMS "Build mbed TLS programs." OFF)
 
 option(UNSAFE_BUILD "Allow unsafe builds. These builds ARE NOT SECURE." OFF)
 
@@ -238,3 +234,61 @@ if(ENABLE_TESTING)
                     ${CMAKE_CURRENT_BINARY_DIR}/DartConfiguration.tcl COPYONLY)
     endif()
 endif()
+
+#set(pc_config "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc")
+#configure_file(lib${PROJECT_NAME}.pc.in ${pc_config} @ONLY)
+
+#set(la_config "${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}.la")
+#configure_file(${PROJECT_NAME}.la.in ${la_config} @ONLY)
+
+# Installation (https://github.com/forexample/package-example) {
+
+set(config_install_dir "lib/cmake/${PROJECT_NAME}")
+set(include_install_dir "include")
+
+set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+
+set(version_config "${generated_dir}/${PROJECT_NAME}ConfigVersion.cmake")
+set(project_config "${generated_dir}/${PROJECT_NAME}Config.cmake")
+set(TARGETS_EXPORT_NAME "${PROJECT_NAME}Targets")
+set(namespace "${PROJECT_NAME}::")
+
+include(CMakePackageConfigHelpers)
+
+# Use:
+#   * PROJECT_VERSION
+write_basic_package_version_file(
+    "${version_config}" COMPATIBILITY SameMajorVersion
+)
+
+# Use variables:
+#   * TARGETS_EXPORT_NAME
+#   * PROJECT_NAME
+configure_package_config_file(
+    "cmake/Config.cmake.in"
+    "${project_config}"
+    INSTALL_DESTINATION "${config_install_dir}"
+)
+
+install(
+    TARGETS mbedx509 mbedcrypto mbedtls
+    EXPORT "${TARGETS_EXPORT_NAME}"
+    LIBRARY DESTINATION "lib"
+    ARCHIVE DESTINATION "lib"
+    RUNTIME DESTINATION "bin"
+    INCLUDES DESTINATION "${include_install_dir}"
+)
+
+install(
+    FILES "${project_config}" "${version_config}"
+    DESTINATION "${config_install_dir}"
+)
+
+install(
+    EXPORT "${TARGETS_EXPORT_NAME}"
+    NAMESPACE "${namespace}"
+    DESTINATION "${config_install_dir}"
+)
+
+#install(FILES ${pc_config} DESTINATION lib/pkgconfig)
+#install(FILES ${la_config} DESTINATION lib)
